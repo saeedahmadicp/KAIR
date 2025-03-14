@@ -1,10 +1,10 @@
 {
   "task": "dncnn25"  //  root/task/images-models-options
   , "model": "plain" // "plain"
-  , "gpu_ids": [0]
+  , "gpu_ids": [0, 1]
 
   , "scale": 1       // broadcast to "netG" if SISR
-  , "n_channels": 1  // broadcast to "datasets", 1 for grayscale, 3 for color
+  , "n_channels": 3  // broadcast to "datasets", 1 for grayscale, 3 for color
 
   , "merge_bn": true               // BN for DnCNN
   , "merge_bn_startpoint": 400000  // merge BN after N iterations
@@ -43,10 +43,10 @@
 
   , "netG": {
     "net_type": "dncnn" // "dncnn" | "fdncnn" | "ffdnet" | "srmd" | "dpsr" | "msrresnet0" |  "msrresnet1" | "rrdb" 
-    , "in_nc": 1        // input channel number
-    , "out_nc": 1       // ouput channel number
+    , "in_nc": 3        // input channel number
+    , "out_nc": 3       // ouput channel number
     , "nc": 64          // 64 for "dncnn"
-    , "nb": 17          // 17 for "dncnn", 20 for dncnn3, 16 for "srresnet"
+    , "nb": 20          // 17 for "dncnn", 20 for dncnn3, 16 for "srresnet"
     , "gc": 32          // unused
     , "ng": 2           // unused
     , "reduction" : 16  // unused

@@ -145,7 +145,11 @@ def p2o(psf, shape):
     otf[...,:psf.shape[2],:psf.shape[3]].copy_(psf)
     for axis, axis_size in enumerate(psf.shape[2:]):
         otf = torch.roll(otf, -int(axis_size / 2), dims=axis+2)
-    otf = torch.rfft(otf, 2, onesided=False)
+    #torch.fft.fftn(otf, dim=(-2, -1))
+    #otf = torch.fft.fftn(otf, dim=(-2, -1))
+    
+    #otf = torch.rfft(otf, 2, onesided=False)
+    otf = torch.view_as_real(torch.fft.fftn(otf, dim=(-2, -1)))
     n_ops = torch.sum(torch.tensor(psf.shape).type_as(psf) * torch.log2(torch.tensor(psf.shape).type_as(psf)))
     otf[..., 1][torch.abs(otf[..., 1]) < n_ops*2.22e-16] = torch.tensor(0).type_as(psf)
     return otf
@@ -262,15 +266,17 @@ class DataNet(nn.Module):
     def __init__(self):
         super(DataNet, self).__init__()
 
-    def forward(self, x, FB, FBC, F2B, FBFy, alpha, sf):
-        FR = FBFy + torch.rfft(alpha*x, 2, onesided=False)
+    def forward(self, x, FB, FBC, F2B, FBFy, alpha, sf): 
+        FR = FBFy +   torch.view_as_real(torch.fft.fftn(alpha*x, dim=(-2, -1))) #torch.rfft(alpha*x, 2, onesided=False)  #otf = torch.view_as_real(torch.fft.fftn(otf, dim=(-2, -1)))
         x1 = cmul(FB, FR)
         FBR = torch.mean(splits(x1, sf), dim=-1, keepdim=False)
         invW = torch.mean(splits(F2B, sf), dim=-1, keepdim=False)
         invWBR = cdiv(FBR, csum(invW, alpha))
         FCBinvWBR = cmul(FBC, invWBR.repeat(1, 1, sf, sf, 1))
         FX = (FR-FCBinvWBR)/alpha.unsqueeze(-1)
-        Xest = torch.irfft(FX, 2, onesided=False)
+        FX_complex = torch.view_as_complex(FX)
+        Xest = torch.fft.ifftn(FX_complex, dim=(-2, -1)).real
+        #Xest = torch.irfft(FX, 2, onesided=False)
 
         return Xest
 
@@ -328,8 +334,8 @@ class USRNet(nn.Module):
         FB = p2o(k, (w*sf, h*sf))
         FBC = cconj(FB, inplace=False)
         F2B = r2c(cabs2(FB))
-        STy = upsample(x, sf=sf)
-        FBFy = cmul(FBC, torch.rfft(STy, 2, onesided=False))
+        STy = upsample(x, sf=sf) #otf = torch.view_as_real(torch.fft.fftn(otf, dim=(-2, -1)))
+        FBFy = cmul(FBC,  torch.view_as_real(torch.fft.fftn(STy, dim=(-2,-1))) )# torch.rfft(STy, 2, onesided=False))
         x = nn.functional.interpolate(x, scale_factor=sf, mode='nearest')
 
         # hyper-parameter, alpha & beta

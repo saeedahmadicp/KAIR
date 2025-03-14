@@ -1,0 +1,7 @@
+model_zoo/*
+model_zoo-20250313T023459Z-001/*
+trainsets/*
+testsets/*
+*/__pycache__/*
+results/*
+datasets/*

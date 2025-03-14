@@ -73,8 +73,8 @@ def main():
     # Preparation
     # ----------------------------------------
     model_name = 'usrnet'      # 'usrgan' | 'usrnet' | 'usrgan_tiny' | 'usrnet_tiny'
-    testset_name = 'set5'      # test set,  'set5' | 'srbsd68'
-    test_sf = [4] if 'gan' in model_name else [2, 3, 4]  # scale factor, from {1,2,3,4}
+    testset_name = 'RNI15'      # test set,  'set5' | 'srbsd68'
+    test_sf = [4] #if 'gan' in model_name else [2, 3, 4]  # scale factor, from {1,2,3,4}
 
     show_img = False           # default: False
     save_L = True              # save LR image

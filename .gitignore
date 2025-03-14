@@ -5,3 +5,4 @@ testsets/*
 */__pycache__/*
 results/*
 datasets/*
+denoising/*

@@ -1,5 +1,5 @@
 {
-  "task": "dncnn25"  //  root/task/images-models-options
+  "task": "dncnn_color_blind"  //  root/task/images-models-options
   , "model": "plain" // "plain"
   , "gpu_ids": [0, 1]
 
@@ -18,21 +18,21 @@
     "train": {
       "name": "train_dataset"           // just name
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" for dncnn,  | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch"
-      , "dataroot_H": "trainsets/trainH"// path of H training dataset
+      , "dataroot_H": "trainsets/trainH/Flickr2K/Flickr2K_HR"// path of H training dataset
       , "dataroot_L": null              // path of L training dataset
-      , "H_size": 40                    // patch size 40 | 64 | 96 | 128 | 192
+      , "H_size": 128                    // patch size 40 | 64 | 96 | 128 | 192
 
       , "sigma": 25                     // 15, 25, 50 for DnCNN | [0, 75] for FFDNet and FDnCNN
       , "sigma_test": 25                // 15, 25, 50 for DnCNN and ffdnet
 
       , "dataloader_shuffle": true
       , "dataloader_num_workers": 8
-      , "dataloader_batch_size": 64     // batch size 1 | 16 | 32 | 48 | 64 | 128
+      , "dataloader_batch_size": 128     // batch size 1 | 16 | 32 | 48 | 64 | 128
     }
     , "test": {
       "name": "test_dataset"            // just name
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" for dncnn,  | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch"
-      , "dataroot_H": "testsets/bsd68"  // path of H testing dataset
+      , "dataroot_H": "testsets/RNI15"  // path of H testing dataset
       , "dataroot_L": null              // path of L testing dataset
 
       , "sigma": 25                     // 15, 25, 50 for DnCNN | [0, 75] for FFDNet and FDnCNN

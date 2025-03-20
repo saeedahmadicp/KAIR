@@ -67,8 +67,8 @@ def main():
     # Preparation
     # ----------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str, default='dncnn_25', help='dncnn_15, dncnn_25, dncnn_50, dncnn_gray_blind, dncnn_color_blind, dncnn3')
-    parser.add_argument('--testset_name', type=str, default='set12', help='test set, bsd68 | set12')
+    parser.add_argument('--model_name', type=str, default='dncnn_color_blind', help='dncnn_15, dncnn_25, dncnn_50, dncnn_gray_blind, dncnn_color_blind, dncnn3')
+    parser.add_argument('--testset_name', type=str, default='RNI15', help='test set, bsd68 | set12')
     parser.add_argument('--noise_level_img', type=int, default=15, help='noise level: 15, 25, 50')
     parser.add_argument('--x8', type=bool, default=False, help='x8 to boost performance')
     parser.add_argument('--show_img', type=bool, default=False, help='show the image')
@@ -93,14 +93,14 @@ def main():
     border = args.sf if args.task_current == 'sr' else 0        # shave boader to calculate PSNR and SSIM
    # model_path = os.path.join(args.model_pool, args.model_name+'.pth')
     model_path = os.path.join("denoising22", "dncnn_color_blind/models/100000_G.pth" )
-
+    
     # ----------------------------------------
     # L_path, E_path, H_path
     # ----------------------------------------
 
-    L_path = os.path.join(args.testsets, args.testset_name) # L_path, for Low-quality images
+    L_path = os.path.join(args.testsets, args.testset_name ) # L_path, for Low-quality images
     H_path = L_path                               # H_path, for High-quality images
-    E_path = os.path.join(args.results, result_name  + "_updated")   # E_path, for Estimated images
+    E_path = os.path.join(args.results, result_name)   # E_path, for Estimated images
     util.mkdir(E_path)
 
     if H_path == L_path:
@@ -118,6 +118,7 @@ def main():
 
     from models.network_dncnn import DnCNN as net
     model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')
+   
     # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
     model.load_state_dict(torch.load(model_path), strict=True)
     model.eval()
@@ -127,6 +128,38 @@ def main():
     logger.info('Model path: {:s}'.format(model_path))
     number_parameters = sum(map(lambda x: x.numel(), model.parameters()))
     logger.info('Params number: {}'.format(number_parameters))
+    
+    
+    ## convert the model to onnx 
+    onnx_path = os.path.join(args.model_pool, args.model_name+'.onnx')
+    ##dynamic height and width
+    dynamic_axes = {'input': {0: 'batch_size', 2: 'height', 3: 'width'}, 'output': {0: 'batch_size'}}
+    dummy_input = torch.randn(1, n_channels, 480, 640).to(device)
+    torch.onnx.export(model, dummy_input, onnx_path, opset_version=13, input_names=['input'], output_names=['output'], 
+                      dynamic_axes=dynamic_axes)
+    
+    logger.info('ONNX model path: {:s}'.format(onnx_path))
+    logger.info('Params number: {}'.format(number_parameters))
+    logger.info('Model_name:{}, image sigma:{}'.format(args.model_name, args.noise_level_img))
+    
+    import onnx
+    import onnxruntime
+    
+    # Load the ONNX model
+    onnx_model = onnx.load(onnx_path)
+    # Check the model
+    onnx.checker.check_model(onnx_model)
+    
+    # Create an ONNX Runtime session
+    ort_session = onnxruntime.InferenceSession(onnx_path)
+    # Prepare input data
+    input_data = np.random.randn(1, n_channels, 480, 640).astype(np.float32)
+    # Run inference
+    ort_inputs = {ort_session.get_inputs()[0].name: input_data}
+    ort_outs = ort_session.run(None, ort_inputs)
+    logger.info('ONNX model inference output: {}'.format(ort_outs[0].shape))
+    logger.info('ONNX model inference output: {}'.format(ort_outs[0].shape))
+    # ----------------------------------------
 
     test_results = OrderedDict()
     test_results['psnr'] = []
@@ -146,6 +179,7 @@ def main():
         img_name, ext = os.path.splitext(os.path.basename(img))
         # logger.info('{:->4d}--> {:>10s}'.format(idx+1, img_name+ext))
         img_L = util.imread_uint(img, n_channels=n_channels)
+        ##reshape the images to 480x640
         img_L = util.uint2single(img_L)
 
         if args.need_degradation:  # degradation process
@@ -161,10 +195,18 @@ def main():
         # (2) img_E
         # ------------------------------------
 
-        if not args.x8:
-            img_E = model(img_L)
-        else:
-            img_E = utils_model.test_mode(model, img_L, mode=3)
+        
+      
+        
+        
+        ## test with onnx model
+        ort_inputs = {ort_session.get_inputs()[0].name: img_L.cpu().numpy()}
+        ort_outs = ort_session.run(None, ort_inputs)
+        img_E = torch.from_numpy(ort_outs[0]).to(device)
+        # if not args.x8:
+        #     img_E = model(img_L)
+        # else:
+        #     img_E = utils_model.test_mode(model, img_L, mode=3)
 
         img_E = util.tensor2uint(img_E)
 
@@ -181,12 +223,12 @@ def main():
             # PSNR and SSIM
             # --------------------------------
 
-            psnr = util.calculate_psnr(img_E, img_H, border=border)
-            ssim = util.calculate_ssim(img_E, img_H, border=border)
-            test_results['psnr'].append(psnr)
-            test_results['ssim'].append(ssim)
-            logger.info('{:s} - PSNR: {:.2f} dB; SSIM: {:.4f}.'.format(img_name+ext, psnr, ssim))
-            util.imshow(np.concatenate([img_E, img_H], axis=1), title='Recovered / Ground-truth') if args.show_img else None
+            # psnr = util.calculate_psnr(img_E, img_H, border=border)
+            # ssim = util.calculate_ssim(img_E, img_H, border=border)
+            # test_results['psnr'].append(psnr)
+            # test_results['ssim'].append(ssim)
+            # logger.info('{:s} - PSNR: {:.2f} dB; SSIM: {:.4f}.'.format(img_name+ext, psnr, ssim))
+            # util.imshow(np.concatenate([img_E, img_H], axis=1), title='Recovered / Ground-truth') if args.show_img else None
 
         # ------------------------------------
         # save results
@@ -194,10 +236,10 @@ def main():
 
         util.imsave(img_E, os.path.join(E_path, img_name+ext))
 
-    if need_H:
-        ave_psnr = sum(test_results['psnr']) / len(test_results['psnr'])
-        ave_ssim = sum(test_results['ssim']) / len(test_results['ssim'])
-        logger.info('Average PSNR/SSIM(RGB) - {} - PSNR: {:.2f} dB; SSIM: {:.4f}'.format(result_name, ave_psnr, ave_ssim))
+    # if need_H:
+    #     ave_psnr = sum(test_results['psnr']) / len(test_results['psnr'])
+    #     ave_ssim = sum(test_results['ssim']) / len(test_results['ssim'])
+    #     logger.info('Average PSNR/SSIM(RGB) - {} - PSNR: {:.2f} dB; SSIM: {:.4f}'.format(result_name, ave_psnr, ave_ssim))
 
 if __name__ == '__main__':
 

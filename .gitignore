@@ -6,3 +6,5 @@ testsets/*
 results/*
 datasets/*
 denoising/*
+denoising22/*
+denoising33/*

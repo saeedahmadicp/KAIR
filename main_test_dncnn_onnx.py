@@ -92,7 +92,7 @@ def main():
     result_name = args.testset_name + '_' + args.model_name     # fixed
     border = args.sf if args.task_current == 'sr' else 0        # shave boader to calculate PSNR and SSIM
    # model_path = os.path.join(args.model_pool, args.model_name+'.pth')
-    model_path = os.path.join("denoising22", "dncnn_color_blind/models/100000_G.pth" )
+    model_path = os.path.join("denoising", "dncnn_color_blind/models/615000_G.pth" )
     
     # ----------------------------------------
     # L_path, E_path, H_path
@@ -117,7 +117,7 @@ def main():
     # ----------------------------------------
 
     from models.network_dncnn import DnCNN as net
-    model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')
+    model = net(in_nc=n_channels, out_nc=n_channels, nc=92, nb=nb, act_mode='BR')
    
     # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
     model.load_state_dict(torch.load(model_path), strict=True)
@@ -131,11 +131,11 @@ def main():
     
     
     ## convert the model to onnx 
-    onnx_path = os.path.join(args.model_pool, args.model_name+'.onnx')
+    onnx_path = os.path.join(args.model_pool, args.model_name+'_updated2.onnx')
     ##dynamic height and width
     dynamic_axes = {'input': {0: 'batch_size', 2: 'height', 3: 'width'}, 'output': {0: 'batch_size'}}
     dummy_input = torch.randn(1, n_channels, 480, 640).to(device)
-    torch.onnx.export(model, dummy_input, onnx_path, opset_version=13, input_names=['input'], output_names=['output'], 
+    torch.onnx.export(model, dummy_input, onnx_path, opset_version=13, input_names=['input'], output_names=['output'],
                       dynamic_axes=dynamic_axes)
     
     logger.info('ONNX model path: {:s}'.format(onnx_path))

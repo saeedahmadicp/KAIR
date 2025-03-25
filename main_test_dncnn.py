@@ -67,7 +67,7 @@ def main():
     # Preparation
     # ----------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str, default='dncnn_25', help='dncnn_15, dncnn_25, dncnn_50, dncnn_gray_blind, dncnn_color_blind, dncnn3')
+    parser.add_argument('--model_name', type=str, default='dncnn_color_blind', help='dncnn_15, dncnn_25, dncnn_50, dncnn_gray_blind, dncnn_color_blind, dncnn3')
     parser.add_argument('--testset_name', type=str, default='set12', help='test set, bsd68 | set12')
     parser.add_argument('--noise_level_img', type=int, default=15, help='noise level: 15, 25, 50')
     parser.add_argument('--x8', type=bool, default=False, help='x8 to boost performance')
@@ -100,7 +100,7 @@ def main():
 
     L_path = os.path.join(args.testsets, args.testset_name) # L_path, for Low-quality images
     H_path = L_path                               # H_path, for High-quality images
-    E_path = os.path.join(args.results, result_name  + "_updated")   # E_path, for Estimated images
+    E_path = os.path.join(args.results, result_name  + "_updated2")   # E_path, for Estimated images
     util.mkdir(E_path)
 
     if H_path == L_path:
@@ -117,7 +117,7 @@ def main():
     # ----------------------------------------
 
     from models.network_dncnn import DnCNN as net
-    model = net(in_nc=n_channels, out_nc=n_channels, nc=92, nb=nb, act_mode='BR')
+    model = net(in_nc=n_channels, out_nc=n_channels, nc=92, nb=20, act_mode='BR')
     # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
     model.load_state_dict(torch.load(model_path), strict=True)
     model.eval()

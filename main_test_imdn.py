@@ -11,6 +11,9 @@ from utils import utils_logger
 from utils import utils_image as util
 from utils import utils_model
 
+import onnx 
+import onnxruntime as ort
+import onnxsim
 
 '''
 Spyder (Python 3.6)
@@ -128,6 +131,42 @@ def main():
     L_paths = util.get_image_paths(L_path)
     H_paths = util.get_image_paths(H_path) if need_H else None
 
+
+
+
+    # ----------------------------------------
+    ## convert the model to onnx
+    model_h, model_w = 160, 216
+    dummy_input = torch.randn(1, 3, model_h, model_w).to(device)
+    onnx_path = os.path.join(model_pool, model_name+'_v2.onnx')
+    torch.onnx.export(model, dummy_input, onnx_path, opset_version=11, input_names=['input'],
+                      output_names=['output'], do_constant_folding=True)
+    # Load the ONNX model
+    onnx_model = onnx.load(onnx_path)
+    # Check the model
+    onnx.checker.check_model(onnx_model)
+    # Create an ONNX Runtime session
+    ort_session = ort.InferenceSession(onnx_path)
+    # Prepare the input
+    input_name = ort_session.get_inputs()[0].name
+    # Prepare the output
+    output_name = ort_session.get_outputs()[0].name
+    # Prepare the input data
+    print('input_name:', input_name)
+    print('output_name:', output_name)
+    # Prepare the input data
+    input_data = np.random.randn(1, 3, model_h, model_w).astype(np.float32)
+    # Run the model
+    ort_output = ort_session.run([output_name], {input_name: input_data})[0]
+    print('ort_output:', ort_output.shape)
+    
+    simplified_model, check = onnxsim.simplify(onnx_model)
+    onnx_simplied_path = os.path.join(model_pool, model_name+'_v2_simplified.onnx')
+    onnx.save(simplified_model, onnx_simplied_path )
+    nnx_model = simplified_model
+    
+    # Save the simplified model
+    # ----------------------------------
     for idx, img in enumerate(L_paths):
 
         # ------------------------------------

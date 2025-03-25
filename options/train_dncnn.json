@@ -20,7 +20,7 @@
       , "dataset_type": "dncnn"         // "dncnn" | "dnpatch" for dncnn,  | "fdncnn" | "ffdnet" | "sr" | "srmd" | "dpsr" | "plain" | "plainpatch"
       , "dataroot_H": "trainsets/trainH/Flickr2K/Flickr2K_HR"// path of H training dataset
       , "dataroot_L": null              // path of L training dataset
-      , "H_size": 192                    // patch size 40 | 64 | 96 | 128 | 192
+      , "H_size": 96                    // patch size 40 | 64 | 96 | 128 | 192
 
       , "sigma": 25                     // 15, 25, 50 for DnCNN | [0, 75] for FFDNet and FDnCNN
       , "sigma_test": 25                // 15, 25, 50 for DnCNN and ffdnet
@@ -45,8 +45,8 @@
     "net_type": "dncnn" // "dncnn" | "fdncnn" | "ffdnet" | "srmd" | "dpsr" | "msrresnet0" |  "msrresnet1" | "rrdb" 
     , "in_nc": 3        // input channel number
     , "out_nc": 3       // ouput channel number
-    , "nc": 92          // 64 for "dncnn"
-    , "nb": 20          // 17 for "dncnn", 20 for dncnn3, 16 for "srresnet"
+    , "nc": 64          // 64 for "dncnn"
+    , "nb": 15          // 17 for "dncnn", 20 for dncnn3, 16 for "srresnet"
     , "gc": 32          // unused
     , "ng": 2           // unused
     , "reduction" : 16  // unused

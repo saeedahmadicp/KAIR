@@ -58,7 +58,7 @@ def sequential(*args):
 # --------------------------------------------
 # return nn.Sequantial of (Conv + BN + ReLU)
 # --------------------------------------------
-def conv(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1, bias=True, mode='CBR', negative_slope=0.2):
+def conv(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1, bias=True, mode='CBR', negative_slope=0.1):
     L = []
     for t in mode:
         if t == 'C':

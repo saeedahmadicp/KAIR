@@ -61,7 +61,8 @@ class DnCNN(nn.Module):
         bias = True
 
         m_head = B.conv(in_nc, nc, mode='C'+act_mode[-1], bias=bias)
-        m_body = [B.conv(nc, nc, mode='C'+act_mode, bias=bias) for _ in range(nb-2)]
+        #m_body = [B.conv(nc, nc, mode='C'+act_mode, bias=bias) for _ in range(nb-2)]
+        m_body = [B.ResBlock(nc, nc, mode=act_mode, bias=bias) for _ in range(nb-2)]
         m_tail = B.conv(nc, out_nc, mode='C', bias=bias)
 
         self.model = B.sequential(m_head, *m_body, m_tail)
